@@ -20,20 +20,36 @@ config.serialHandle  = -1;
 config.pinOneMask    = 1;
 
 % --- Trigger Codes (valeurs AVANT forçage bit 0) ---
-trig.startTrial      = 10;
-trig.actionClick     = 20;
-trig.toneOnset       = 30;
-trig.judgementScreen = 40;
-trig.responseClick   = 50;
-trig.restingStart    = 60;
-trig.restingEnd      = 62;
-trig.crisisStart     = 70;
-trig.crisisFixation  = 72;
-trig.crisisSuccess   = 74;
-trig.crisisFail      = 76;
-trig.blockEnd        = 80;
-trig.trainingTrial   = 90;
-trig.badTrial        = 100;
+% trig.startTrial      = 10;
+% trig.actionClick     = 20;
+% trig.toneOnset       = 30;
+% trig.judgementScreen = 40;
+% trig.responseClick   = 50;
+% trig.restingStart    = 60;
+% trig.restingEnd      = 62;
+% trig.crisisStart     = 70;
+% trig.crisisFixation  = 72;
+% trig.crisisSuccess   = 74;
+% trig.crisisFail      = 76;
+% trig.blockEnd        = 80;
+% trig.trainingTrial   = 90;
+% trig.badTrial        = 100;
+
+% --- Trigger Codes --- 
+
+trig.actionClick = 2; 
+trig.toneOnset = 3; 
+trig.judgementScreen = 4; 
+trig.responseClick = 5; 
+trig.restingStart = 6; 
+trig.restingEnd = 7; 
+trig.crisisStart = 8; 
+trig.crisisFixation = 9; 
+trig.crisisSuccess = 10; 
+trig.crisisFail = 11; 
+trig.blockEnd = 12; 
+trig.badTrial = 13;
+trig.startTrial = 14; 
 
 % --- Hardware Check : PORT SÉRIE (Linux) ---
 if config.useTriggers
@@ -513,10 +529,6 @@ function [all_results, blockEventLog] = RunExperimentalBlock( ...
     blockEventLog(end+1,:) = {GetSecs()-experimentStart, blockLabel, 0, 'BlockStart', ...
         sprintf('Cond:%s Evt:%s nTrials:%d Training:%d', condType, eventType, numberOfTrials, isTraining)};
 
-    if isTraining
-        send_trigger(trig.trainingTrial, config);
-    end
-
     good_trial_count    = 0;
     trial_attempt_index = 1;
     [screenXpixels, screenYpixels] = Screen('WindowSize', window);
@@ -835,7 +847,11 @@ function [all_results, blockEventLog] = RunExperimentalBlock( ...
                 rect = textBoundsClick(i,:);
                 if IsPointInsideRectangle([mx, my], rect) && any(buttons)
                     selectedIndex = i;
-                    send_trigger(trig.responseClick, config);
+                    if strcmp(trialValidity, 'Bad')
+                        send_trigger(trig.badTrial, config);
+                    else
+                        send_trigger(trig.responseClick, config);
+                    end
                     judgementRT = GetSecs() - judgementOnset;
                     blockEventLog(end+1,:) = {GetSecs()-experimentStart, blockLabel, ...
                         trial_attempt_index, 'ReportClick', ...
@@ -882,7 +898,7 @@ function [all_results, blockEventLog] = RunExperimentalBlock( ...
 
         % --- HANDLE BAD TRIAL ---
         if strcmp(trialValidity, 'Bad')
-            send_trigger(trig.badTrial, config);
+            %send_trigger(trig.badTrial, config);
             Screen('TextSize', window, const.textSizeStart);
             DrawFormattedText(window, ...
                 'Essai invalide (trop court).\n\nCLIQUEZ pour continuer.', ...
@@ -900,7 +916,6 @@ function [all_results, blockEventLog] = RunExperimentalBlock( ...
         trial_attempt_index = trial_attempt_index + 1;
     end
 
-    send_trigger(trig.blockEnd, config);
     blockEventLog(end+1,:) = {GetSecs()-experimentStart, blockLabel, ...
         trial_attempt_index-1, 'BlockEnd', ...
         sprintf('GoodTrials:%d TotalAttempts:%d', good_trial_count, trial_attempt_index-1)};
@@ -1158,10 +1173,13 @@ function send_trigger(val, config)
     if ~config.useTriggers || config.serialHandle < 0
         return;
     end
-    val_out = bitor(uint8(val), uint8(config.pinOneMask));
-    IOPort('Write', config.serialHandle, val_out);
-    tEnd = GetSecs + config.pulseWidth;
+    
+    IOPort('Write', config.serialHandle, uint8(1));
+    tEnd = GetSecs + config.pulseWidth/2;
     while GetSecs < tEnd; end
+    IOPort('Write', config.serialHandle, uint8(val));
+    tEnd1 = GetSecs + config.pulseWidth/2;
+    while GetSecs < tEnd1; end
     IOPort('Write', config.serialHandle, uint8(0));
 end
 
