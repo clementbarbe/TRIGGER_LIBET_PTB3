@@ -19,22 +19,6 @@ config.serialBaud    = 115200;
 config.serialHandle  = -1;
 config.pinOneMask    = 1;
 
-% --- Trigger Codes (valeurs AVANT forçage bit 0) ---
-% trig.startTrial      = 10;
-% trig.actionClick     = 20;
-% trig.toneOnset       = 30;
-% trig.judgementScreen = 40;
-% trig.responseClick   = 50;
-% trig.restingStart    = 60;
-% trig.restingEnd      = 62;
-% trig.crisisStart     = 70;
-% trig.crisisFixation  = 72;
-% trig.crisisSuccess   = 74;
-% trig.crisisFail      = 76;
-% trig.blockEnd        = 80;
-% trig.trainingTrial   = 90;
-% trig.badTrial        = 100;
-
 % --- Trigger Codes --- 
 
 trig.actionClick = 2; 
@@ -180,7 +164,7 @@ yRow2 = yRow1 - 50;
 uicontrol('Style', 'text', 'Position', [30, yRow2, 140, 25], ...
     'String', 'Mode Session :', 'FontSize', 11, 'HorizontalAlignment', 'left');
 hMode = uicontrol('Style', 'popupmenu', 'Position', [180, yRow2, 300, 28], ...
-    'String', {'Base', 'Post 1', 'Post 2', 'Training'}, 'FontSize', 11);
+    'String', {'Base', 'Post 1', 'Post 2','Post 3','Training'}, 'FontSize', 11);
 
 % Dossier de Sauvegarde
 yRow3 = yRow2 - 200;
@@ -234,30 +218,37 @@ if strcmp(sessionMode, 'Base')
     experimentSequence = [experimentSequence; struct('cond','baseline','evt','action','n',24)];
     experimentSequence = [experimentSequence; struct('cond','operant', 'evt','tone',  'n',24)];
     experimentSequence = [experimentSequence; struct('cond','CRISIS',  'evt','CRISIS','n',0)];
-    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','action','n',8)];
-    experimentSequence = [experimentSequence; struct('cond','baseline','evt','tone',  'n',8)];
-    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','tone',  'n',8)];
-    experimentSequence = [experimentSequence; struct('cond','baseline','evt','action','n',8)];
+    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','action','n',6)];
+    experimentSequence = [experimentSequence; struct('cond','baseline','evt','tone',  'n',6)];
+    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','tone',  'n',6)];
+    experimentSequence = [experimentSequence; struct('cond','baseline','evt','action','n',6)];
 
 elseif strcmp(sessionMode, 'Post 1')
     experimentSequence = [experimentSequence; struct('cond','CRISIS',  'evt','CRISIS','n',0)];
+    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','tone',  'n',6)];
+    experimentSequence = [experimentSequence; struct('cond','baseline','evt','tone',  'n',6)];
     experimentSequence = [experimentSequence; struct('cond','operant', 'evt','action','n',8)];
-    experimentSequence = [experimentSequence; struct('cond','baseline','evt','tone',  'n',8)];
-    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','tone',  'n',8)];
     experimentSequence = [experimentSequence; struct('cond','baseline','evt','action','n',8)];
 
 elseif strcmp(sessionMode, 'Post 2')
     experimentSequence = [experimentSequence; struct('cond','CRISIS',  'evt','CRISIS','n',0)];
-    experimentSequence = [experimentSequence; struct('cond','baseline','evt','tone',  'n',8)];
-    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','tone',  'n',8)];
-    experimentSequence = [experimentSequence; struct('cond','baseline','evt','action','n',8)];
-    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','action','n',8)];
+    experimentSequence = [experimentSequence; struct('cond','baseline','evt','action','n',6)];
+    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','tone',  'n',6)];
+    experimentSequence = [experimentSequence; struct('cond','baseline','evt','tone',  'n',6)];
+    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','action','n',6)];
+
+elseif strcmp(sessionMode, 'Post 3')
+    experimentSequence = [experimentSequence; struct('cond','CRISIS',  'evt','CRISIS','n',0)];
+    experimentSequence = [experimentSequence; struct('cond','baseline','evt','tone',  'n',6)];
+    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','tone',  'n',6)];
+    experimentSequence = [experimentSequence; struct('cond','baseline','evt','action','n',6)];
+    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','action','n',6)];
 
 elseif strcmp(sessionMode, 'Training')
+    experimentSequence = [experimentSequence; struct('cond','operant','evt','action','n', 2)];
     experimentSequence = [experimentSequence; struct('cond','baseline','evt','action','n',2)];
-    experimentSequence = [experimentSequence; struct('cond','baseline','evt','tone',  'n',2)];
-    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','action','n',2)];
-    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','tone',  'n',2)];
+    experimentSequence = [experimentSequence; struct('cond','operant', 'evt','tone','n',  2)];
+    experimentSequence = [experimentSequence; struct('cond','baseline', 'evt','tone', 'n',2)];
 end
 
 % =========================================================================
@@ -529,6 +520,12 @@ function [all_results, blockEventLog] = RunExperimentalBlock( ...
     blockEventLog(end+1,:) = {GetSecs()-experimentStart, blockLabel, 0, 'BlockStart', ...
         sprintf('Cond:%s Evt:%s nTrials:%d Training:%d', condType, eventType, numberOfTrials, isTraining)};
 
+    % --- LOG CONSOLE ---
+    fprintf('\n========================================\n');
+    fprintf('  BLOC %d | %s | %s | %d essais\n', blockNumber, upper(condType), upper(eventType), numberOfTrials);
+    if isTraining; fprintf('  ** ENTRAÎNEMENT **\n'); end
+    fprintf('========================================\n');
+
     good_trial_count    = 0;
     trial_attempt_index = 1;
     [screenXpixels, screenYpixels] = Screen('WindowSize', window);
@@ -665,11 +662,13 @@ function [all_results, blockEventLog] = RunExperimentalBlock( ...
             elapsedTime = vblNow - trialAnimStart;
             currentAngle = mod(initialAngle + (elapsedTime / const.rotationTime) * 360, 360);
 
-            % Accumulation angle total
-            dAngle = currentAngle - prevAngle;
-            if dAngle < -180; dAngle = dAngle + 360; end
-            if dAngle > 180;  dAngle = dAngle - 360; end
-            totalAngleCovered = totalAngleCovered + abs(dAngle);
+            % Accumulation angle total (SEULEMENT avant le trigger)
+            if ~eventTriggered
+                dAngle = currentAngle - prevAngle;
+                if dAngle < -180; dAngle = dAngle + 360; end
+                if dAngle > 180;  dAngle = dAngle - 360; end
+                totalAngleCovered = totalAngleCovered + abs(dAngle);
+            end
             prevAngle = currentAngle;
 
             % Position du dot
@@ -870,6 +869,32 @@ function [all_results, blockEventLog] = RunExperimentalBlock( ...
         if angDiff < -180; angDiff = angDiff + 360; end
         perceivedShift_ms = angDiff * (const.rotationTime * 1000 / 360);
 
+        % --- LOG CONSOLE : résumé essai ---
+        if strcmp(trialValidity, 'Good')
+            validTag = '✓';
+            trialDispNum = good_trial_count + 1;  % sera incrémenté juste après
+        else
+            validTag = '✗';
+            trialDispNum = good_trial_count;
+        end
+
+        % Barre visuelle de l'erreur (-180° à +180°)
+        barWidth = 21;
+        barCenter = ceil(barWidth / 2);
+        normalizedErr = round(angDiff / 180 * (barWidth/2 - 1));
+        normalizedErr = max(-(barWidth/2-1), min(barWidth/2-1, normalizedErr));
+        bar = repmat('-', 1, barWidth);
+        bar(barCenter) = '|';
+        markerPos = barCenter + normalizedErr;
+        markerPos = max(1, min(barWidth, markerPos));
+        bar(markerPos) = '*';
+
+        fprintf('  %s  %d/%d  [%s|%s]  cible:%s  rep:%s  err:%+6.1f°  shift:%+6.0fms  [%s]\n', ...
+            validTag, trialDispNum, numberOfTrials, ...
+            upper(condType(1:3)), upper(eventType(1:3)), ...
+            targetLetter, selectedLetter, ...
+            angDiff, perceivedShift_ms, bar);
+
         % --- BUILD RESULT ROW (17 colonnes) ---
         resultRow = { ...
             blockNumber, ...
@@ -919,6 +944,13 @@ function [all_results, blockEventLog] = RunExperimentalBlock( ...
     blockEventLog(end+1,:) = {GetSecs()-experimentStart, blockLabel, ...
         trial_attempt_index-1, 'BlockEnd', ...
         sprintf('GoodTrials:%d TotalAttempts:%d', good_trial_count, trial_attempt_index-1)};
+
+    % --- LOG CONSOLE ---
+    fprintf('----------------------------------------\n');
+    fprintf('  FIN BLOC %d | Valides: %d/%d | Tentatives: %d\n', ...
+        blockNumber, good_trial_count, numberOfTrials, trial_attempt_index-1);
+    fprintf('========================================\n\n');
+
 end
 
 
@@ -951,6 +983,9 @@ function eventLog = RunCrisisValidation(window, windowRect, white, lightGrey, ..
             [~, ~, keyCode] = KbCheck;
             if keyCode(escapeKey); sca; return; end
         end
+        % --- LOG CONSOLE ---
+        fprintf('\n  CRISE : Déclenchée, fixation...\n');
+
         [~, ~, buttons] = GetMouse(window);
         while any(buttons); [~, ~, buttons] = GetMouse(window); WaitSecs(0.01); end
 
